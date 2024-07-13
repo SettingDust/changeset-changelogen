@@ -1,6 +1,7 @@
 import type { Changeset } from '@changesets/types';
+import { Package } from '@manypkg/get-packages';
 import { execSync } from 'child_process';
-import type { ManyPkgPackage } from '../types';
+import path from 'path';
 
 interface Commit {
   commitHash: string;
@@ -97,7 +98,7 @@ export const getRepoRoot = () => {
 
 export const conventionalMessagesWithCommitsToChangesets = (
   conventionalMessagesToCommits: ConventionalMessagesToCommits[],
-  options: { ignoredFiles?: (string | RegExp)[]; packages: ManyPkgPackage[] },
+  options: { ignoredFiles?: (string | RegExp)[]; packages: Package[] },
 ) => {
   const { ignoredFiles = [], packages } = options;
   return conventionalMessagesToCommits
@@ -105,11 +106,13 @@ export const conventionalMessagesWithCommitsToChangesets = (
       const filesChanged = getFilesChangedSince({
         from: entry.commitHashes[0],
         to: entry.commitHashes[entry.commitHashes.length - 1],
-      }).filter((file) => {
-        return ignoredFiles.every((ignoredPattern) => !file.match(ignoredPattern));
-      });
+      })
+        .filter((file) => {
+          return ignoredFiles.every((ignoredPattern) => !file.match(ignoredPattern));
+        })
+        .map((file) => path.normalize(file));
       const packagesChanged = packages.filter((pkg) => {
-        return filesChanged.some((file) => file.match(pkg.dir.replace(`${getRepoRoot()}/`, '')));
+        return filesChanged.some((file) => file.startsWith(pkg.relativeDir));
       });
       if (packagesChanged.length === 0) return null;
       return {

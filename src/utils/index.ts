@@ -14,19 +14,31 @@ export const getRepoRoot = () => {
   return execSync('git rev-parse --show-toplevel').toString().trim().replace(/\n|\r/g, '');
 };
 
+export const groupTheCommitsWithoutSemver = (commits: GitCommit[], config: ResolvedChangelogConfig) => {
+  return commits.reduce((commits, commit) => {
+    if (config.types[commit.type].semver || commit.isBreaking) {
+      commits.push([commit]);
+    } else {
+      commits[commits.length - 1].push(commit);
+    }
+    return commits;
+  }, [] as GitCommit[][]);
+};
+
 export const commitsToChangesets = (
-  commits: GitCommit[],
+  commits: GitCommit[][],
   options: { ignoredFiles?: (string | RegExp)[]; packages: Package[]; changelogen: ResolvedChangelogConfig },
 ) => {
   const { ignoredFiles = [], packages } = options;
   const root = getRepoRoot();
   return commits
     .map((commit) => {
-      let semver = options.changelogen.types[commit.type].semver;
-      if (commit.isBreaking) semver = 'major';
+      const semver = commit.find((it) => it.isBreaking)
+        ? 'major'
+        : options.changelogen.types[commit.find((it) => options.changelogen.types[it.type].semver)!.type].semver;
       const filesChanged = getFilesChangedSince({
-        from: commit.shortHash,
-        to: commit.shortHash,
+        from: commit[0].shortHash,
+        to: commit[commit.length - 1].shortHash,
       })
         .filter((file) => {
           return ignoredFiles.every((ignoredPattern) => !file.match(ignoredPattern));
@@ -45,7 +57,7 @@ export const commitsToChangesets = (
               };
             })
           : [],
-        summary: formatCommit(commit, options.changelogen),
+        summary: commit.map((it) => formatCommit(it, options.changelogen)).join('\n'),
         packagesChanged,
       };
     })

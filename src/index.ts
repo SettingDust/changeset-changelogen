@@ -6,7 +6,7 @@ import { getGitDiff, loadChangelogConfig, parseCommits } from 'changelogen';
 import consola from 'consola';
 import fs from 'fs';
 import path from 'path';
-import { commitsToChangesets, difference, getCommitsSinceRef } from './utils/index.js';
+import { commitsToChangesets, difference, getCommitsSinceRef, groupTheCommitsWithoutSemver } from './utils/index.js';
 
 const CHANGESET_CONFIG_LOCATION = path.join('.changeset', 'config.json');
 export default async (
@@ -30,7 +30,7 @@ export default async (
     (c) => changelogenConfig.types[c.type] && !(c.type === 'chore' && c.scope === 'deps' && !c.isBreaking),
   );
 
-  const changesets = commitsToChangesets(commits, {
+  const changesets = commitsToChangesets(groupTheCommitsWithoutSemver(commits, changelogenConfig), {
     ignoredFiles: options.ignoredFiles,
     packages,
     changelogen: changelogenConfig,

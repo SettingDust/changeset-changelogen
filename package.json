@@ -15,6 +15,11 @@
     "/bin",
     "/src"
   ],
+  "exports": {
+    "./changelog": {
+      "default": "./src/changelog.cjs"
+    }
+  },
   "bin": {
     "changeset-changelogen": "./bin/index.js"
   },

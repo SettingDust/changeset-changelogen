@@ -2,11 +2,17 @@
 import { default as getChangesets } from '@changesets/read';
 import writeChangeset from '@changesets/write';
 import { getPackagesSync } from '@manypkg/get-packages';
-import { getGitDiff, loadChangelogConfig, parseCommits } from 'changelogen';
+import { loadChangelogConfig, parseCommits } from 'changelogen';
 import consola from 'consola';
 import fs from 'fs';
 import path from 'path';
-import { commitsToChangesets, difference, getCommitsSinceRef, groupTheCommitsWithoutSemver } from './utils/index.js';
+import {
+  commitsToChangesets,
+  difference,
+  getCommitsSinceRef,
+  getGitDiff,
+  groupTheCommitsWithoutSemver,
+} from './utils/index.js';
 
 const CHANGESET_CONFIG_LOCATION = path.join('.changeset', 'config.json');
 export default async (

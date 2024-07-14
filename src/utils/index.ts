@@ -1,6 +1,6 @@
 import type { Changeset } from '@changesets/types';
 import { Package } from '@manypkg/get-packages';
-import { formatReference, GitCommit, Reference, ResolvedChangelogConfig } from 'changelogen';
+import { formatReference, GitCommit, RawGitCommit, Reference, ResolvedChangelogConfig } from 'changelogen';
 import { execSync } from 'child_process';
 import consola from 'consola';
 import path from 'path';
@@ -113,11 +113,11 @@ export const difference = (a: Changeset[], b: Changeset[]): Changeset[] => {
  */
 function formatCommit(commit: GitCommit, config: ResolvedChangelogConfig) {
   return (
-    `${config.types[commit.type].title}: ` +
-    (commit.scope ? `**${commit.scope.trim()}:** ` : '') +
+    `**${config.types[commit.type].title}${commit.scope ? `(${commit.scope.trim()})` : ''}**: ` +
     (commit.isBreaking ? '⚠️  ' : '') +
     upperFirst(commit.description) +
-    formatReferences(commit.references, config)
+    formatReferences(commit.references, config) +
+    (commit.body ? `\n${commit.body.replace('\n', '\n  ')}\n` : '')
   );
 }
 
@@ -131,4 +131,28 @@ function formatReferences(references: Reference[], config: ResolvedChangelogConf
     return ' (' + formatReference(references[0], config.repo) + ')';
   }
   return '';
+}
+
+/**
+ * https://github.com/unjs/changelogen/blob/main/src/git.ts
+ */
+export async function getGitDiff(from: string | undefined, to = 'HEAD'): Promise<RawGitCommit[]> {
+  // https://git-scm.com/docs/pretty-formats
+  const r = execSync(`git --no-pager log ${from ? `${from}...` : ''}${to} --pretty="----%n%s|%h|%an|%ae%n%b"`);
+  return r
+    .toString()
+    .trim()
+    .split('----\n')
+    .splice(1)
+    .map((line) => {
+      const [firstLine, ..._body] = line.split('\n');
+      const [message, shortHash, authorName, authorEmail] = firstLine.split('|');
+      const r: RawGitCommit = {
+        message,
+        shortHash,
+        author: { name: authorName, email: authorEmail },
+        body: _body.join('\n'),
+      };
+      return r;
+    });
 }

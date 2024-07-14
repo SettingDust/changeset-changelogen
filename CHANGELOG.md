@@ -1,5 +1,11 @@
 # changeset-changelogen
 
+## 0.3.3
+
+### Patch Changes
+
+- **🩹 Fixes**: Remove changelog line if there isn't commit with semver ([beff208](https://github.com/SettingDust/changeset-changelogen/commit/beff208))
+
 ## 0.3.2
 
 ### Patch Changes

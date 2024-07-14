@@ -36,12 +36,13 @@ export const commitsToChangesets = (
   const root = getRepoRoot();
   return commits
     .map((commit) => {
+      const commitWithSemver = commit.find((it) => options.changelogen.types[it.type].semver)!;
       const semver = commit.find((it) => it.isBreaking)
         ? 'major'
-        : options.changelogen.types[commit.find((it) => options.changelogen.types[it.type].semver)!.type].semver;
+        : options.changelogen.types[commitWithSemver.type].semver;
       const filesChanged = getFilesChangedSince({
-        from: commit[0].shortHash,
-        to: commit[commit.length - 1].shortHash,
+        from: commitWithSemver.shortHash,
+        to: commitWithSemver.shortHash,
       })
         .filter((file) => {
           return ignoredFiles.every((ignoredPattern) => !file.match(ignoredPattern));

@@ -21,5 +21,6 @@
   "yaml.schemas": {
     "https://json.schemastore.org/github-workflow.json": "/.github/workflows/*.yml"
   },
-  "conventionalCommits.promptScopes": false
+  "conventionalCommits.promptScopes": true,
+  "conventionalCommits.scopes": ["changeset"]
 }

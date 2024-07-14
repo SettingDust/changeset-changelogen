@@ -36,7 +36,8 @@ export const commitsToChangesets = (
   const root = getRepoRoot();
   return commits
     .map((commit) => {
-      const commitWithSemver = commit.find((it) => options.changelogen.types[it.type].semver)!;
+      const commitWithSemver = commit.find((it) => options.changelogen.types[it.type].semver);
+      if (!commitWithSemver) return null;
       const semver = commit.find((it) => it.isBreaking)
         ? 'major'
         : options.changelogen.types[commitWithSemver.type].semver;

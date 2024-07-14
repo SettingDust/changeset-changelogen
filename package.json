@@ -27,7 +27,6 @@
   "license": "MIT",
   "scripts": {
     "type-check": "tsc -p tsconfig.json",
-    "build": "tsup",
     "test": "jest",
     "lint": "eslint 'src/**/*.{ts,tsx}' --quiet --fix",
     "ci:version": "changeset version && pnpm install --lockfile-only",

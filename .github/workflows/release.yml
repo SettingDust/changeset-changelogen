@@ -39,7 +39,7 @@ jobs:
         run: pnpm install
 
       - name: Build project
-        run: pnpm build
+        run: node ./bin/index.js
 
       - name: Create Release Pull Request
         uses: changesets/action@v1

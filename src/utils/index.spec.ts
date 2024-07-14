@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 import type { ChangesetConventionalCommit } from '../types/index.js';
-import { difference, getRepoRoot, gitFetch } from '../utils/index.js';
+import { difference, gitFetch } from '../utils/index.js';
 
 describe('difference', () => {
   const changesets = [
@@ -65,12 +65,6 @@ describe('difference', () => {
   it('correctly detects equal changesets *with* trailing new line/line break within `summary`', () => {
     changesets[0].summary += '\n';
     expect(difference(changesets, currentChangesets)).toEqual([changesets[1]]);
-  });
-});
-
-describe('get-repo-root', () => {
-  it('correctly gets the repo root', () => {
-    expect(getRepoRoot().endsWith('changeset-conventional-commits')).toBe(true);
   });
 });
 

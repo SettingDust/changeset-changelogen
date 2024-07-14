@@ -1,5 +1,5 @@
 #! /usr/bin/env node
-import readChangeset from '@changesets/read';
+import { default as getChangesets } from '@changesets/read';
 import writeChangeset from '@changesets/write';
 import { getPackagesSync } from '@manypkg/get-packages';
 import { execSync } from 'child_process';
@@ -10,7 +10,7 @@ import {
   conventionalMessagesWithCommitsToChangesets,
   difference,
   getCommitsSinceRef,
-} from './utils';
+} from './utils/index.js';
 
 const CHANGESET_CONFIG_LOCATION = path.join('.changeset', 'config.json');
 
@@ -38,7 +38,7 @@ const conventionalCommitChangeset = async (
     packages,
   });
 
-  const currentChangesets = await readChangeset(cwd);
+  const currentChangesets = await getChangesets(cwd);
 
   const newChangesets = currentChangesets.length === 0 ? changesets : difference(changesets, currentChangesets);
 

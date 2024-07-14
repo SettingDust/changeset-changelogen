@@ -1,5 +1,11 @@
 # changeset-changelogen
 
+## 0.3.1
+
+### Patch Changes
+
+- **📖 Documentation**: Better format for dependencies release lines ([0e79fb1](https://github.com/SettingDust/changeset-changelogen/commit/0e79fb1))
+
 ## 0.3.0
 
 ### Minor Changes

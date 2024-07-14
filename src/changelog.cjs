@@ -25,7 +25,8 @@ const getDependencyReleaseLine = async (changesets, dependenciesUpdated) => {
   if (dependenciesUpdated.length === 0) return '';
 
   const changesetLinks = changesets.map(
-    (changeset) => `- Updated dependencies${changeset.commit ? ` [${changeset.commit.slice(0, 7)}]` : ''}`,
+    (changeset) =>
+      `- **🏡 Chore:** Bump workspace dependencies ${changeset.commit ? ` [${changeset.commit.slice(0, 7)}]` : ''}`,
   );
 
   const updatedDependenciesList = dependenciesUpdated.map(

@@ -36,9 +36,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build project
-        run: node ./bin/index.js
-
       - name: Create Release Pull Request
         uses: changesets/action@v1
         with:

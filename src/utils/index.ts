@@ -1,92 +1,9 @@
 import type { Changeset } from '@changesets/types';
 import { Package } from '@manypkg/get-packages';
+import { formatReference, getGitDiff, GitCommit, Reference, ResolvedChangelogConfig } from 'changelogen';
 import { execSync } from 'child_process';
 import path from 'path';
-
-interface Commit {
-  commitHash: string;
-  commitMessage: string;
-}
-
-interface ConventionalMessagesToCommits {
-  changelogMessage: string;
-  commitHashes: string[];
-}
-
-/*
- * Copied from conventional commits config:
- * https://github.com/conventional-changelog/conventional-changelog/blob/master/packages/conventional-changelog-conventionalcommits/writer-opts.js
- * "section" is currently unused but is left in, with the intent to update changeset changelog generation once more fleshed out
- */
-const defaultCommitTypes = [
-  { type: 'feat', section: 'Features' },
-  { type: 'feature', section: 'Features' },
-  { type: 'fix', section: 'Bug Fixes' },
-  { type: 'perf', section: 'Performance Improvements' },
-  { type: 'revert', section: 'Reverts' },
-  { type: 'docs', section: 'Documentation' },
-  { type: 'style', section: 'Styles' },
-  { type: 'chore', section: 'Miscellaneous Chores' },
-  { type: 'refactor', section: 'Code Refactoring' },
-  { type: 'test', section: 'Tests' },
-  { type: 'build', section: 'Build System' },
-  { type: 'ci', section: 'Continuous Integration' },
-];
-
-export const isBreakingChange = (commit: string) => {
-  return (
-    commit.includes('BREAKING CHANGE:') ||
-    // eslint-disable-next-line no-useless-escape
-    defaultCommitTypes.some((commitType) => commit.match(new RegExp(`^${commitType.type}(?:\(.*\))?!:`)))
-  );
-};
-
-export const isConventionalCommit = (commit: string) => {
-  // eslint-disable-next-line no-useless-escape
-  return defaultCommitTypes.some((commitType) => commit.match(new RegExp(`^${commitType.type}(?:\(.*\))?!?:`)));
-};
-
-/* Attempts to associate non-conventional commits to the nearest conventional commit */
-export const associateCommitsToConventionalCommitMessages = (commits: Commit[]): ConventionalMessagesToCommits[] => {
-  return commits.reduce((acc, curr) => {
-    if (!acc.length) {
-      return [
-        {
-          changelogMessage: curr.commitMessage,
-          commitHashes: [curr.commitHash],
-        },
-      ];
-    }
-
-    if (isConventionalCommit(curr.commitMessage)) {
-      if (isConventionalCommit(acc[acc.length - 1].changelogMessage)) {
-        return [
-          ...acc,
-          {
-            changelogMessage: curr.commitMessage,
-            commitHashes: [curr.commitHash],
-          },
-        ];
-      } else {
-        return [
-          ...acc.slice(0, acc.length - 1),
-          {
-            changelogMessage: curr.commitMessage,
-            commitHashes: [...acc[acc.length - 1].commitHashes, curr.commitHash],
-          },
-        ];
-      }
-    } else {
-      return [
-        ...acc.slice(0, acc.length - 1),
-        {
-          ...acc[acc.length - 1],
-          commitHashes: [...acc[acc.length - 1].commitHashes, curr.commitHash],
-        },
-      ];
-    }
-  }, [] as ConventionalMessagesToCommits[]);
-};
+import { upperFirst } from 'scule';
 
 export const getFilesChangedSince = (opts: { from: string; to: string }) => {
   return execSync(`git diff --name-only ${opts.from}~1...${opts.to}`).toString().trim().split('\n');
@@ -96,16 +13,16 @@ export const getRepoRoot = () => {
   return execSync('git rev-parse --show-toplevel').toString().trim().replace(/\n|\r/g, '');
 };
 
-export const conventionalMessagesWithCommitsToChangesets = (
-  conventionalMessagesToCommits: ConventionalMessagesToCommits[],
-  options: { ignoredFiles?: (string | RegExp)[]; packages: Package[] },
+export const commitsToChangesets = (
+  commits: GitCommit[],
+  options: { ignoredFiles?: (string | RegExp)[]; packages: Package[]; changelogen: ResolvedChangelogConfig },
 ) => {
   const { ignoredFiles = [], packages } = options;
-  return conventionalMessagesToCommits
-    .map((entry) => {
+  return commits
+    .map((commit) => {
       const filesChanged = getFilesChangedSince({
-        from: entry.commitHashes[0],
-        to: entry.commitHashes[entry.commitHashes.length - 1],
+        from: commit.shortHash,
+        to: commit.shortHash,
       })
         .filter((file) => {
           return ignoredFiles.every((ignoredPattern) => !file.match(ignoredPattern));
@@ -117,16 +34,14 @@ export const conventionalMessagesWithCommitsToChangesets = (
       if (packagesChanged.length === 0) return null;
       return {
         releases: packagesChanged.map((pkg) => {
+          let semver = options.changelogen.types[commit.type].semver;
+          if (commit.isBreaking) semver = 'major';
           return {
             name: pkg.packageJson.name,
-            type: isBreakingChange(entry.changelogMessage)
-              ? 'major'
-              : entry.changelogMessage.startsWith('feat')
-                ? 'minor'
-                : 'patch',
+            type: semver,
           };
         }),
-        summary: entry.changelogMessage,
+        summary: formatCommit(commit, options.changelogen),
         packagesChanged,
       };
     })
@@ -141,9 +56,11 @@ export const getCurrentBranch = () => {
   return execSync('git rev-parse --abbrev-ref HEAD').toString().trim();
 };
 
-// This could be running on the main branch or on a branch that was created from the main branch.
-// If this is running on the main branch, we want to get all commits since the last release.
-// If this is running on a branch that was created from the main branch, we want to get all commits since the branch was created.
+/**
+ * This could be running on the main branch or on a branch that was created from the main branch.
+ * If this is running on the main branch, we want to get all commits since the last release.
+ * If this is running on a branch that was created from the main branch, we want to get all commits since the branch was created.
+ */
 export const getCommitsSinceRef = (branch: string) => {
   gitFetch(branch);
   const currentBranch = getCurrentBranch();
@@ -161,7 +78,7 @@ export const getCommitsSinceRef = (branch: string) => {
 
   sinceRef = sinceRef.trim();
 
-  return execSync(`git rev-list --ancestry-path ${sinceRef}...HEAD`).toString().split('\n').filter(Boolean).reverse();
+  return getGitDiff(sinceRef);
 };
 
 const compareChangeSet = (a: Changeset, b: Changeset): boolean => {
@@ -171,3 +88,28 @@ const compareChangeSet = (a: Changeset, b: Changeset): boolean => {
 export const difference = (a: Changeset[], b: Changeset[]): Changeset[] => {
   return a.filter((changeA) => !b.some((changeB) => compareChangeSet(changeA, changeB)));
 };
+
+/**
+ * https://github.com/unjs/changelogen/blob/main/src/markdown.ts#L137-L166
+ */
+function formatCommit(commit: GitCommit, config: ResolvedChangelogConfig) {
+  return (
+    '- ' +
+    (commit.scope ? `**${commit.scope.trim()}:** ` : '') +
+    (commit.isBreaking ? '⚠️  ' : '') +
+    upperFirst(commit.description) +
+    formatReferences(commit.references, config)
+  );
+}
+
+function formatReferences(references: Reference[], config: ResolvedChangelogConfig) {
+  const pr = references.filter((ref) => ref.type === 'pull-request');
+  const issue = references.filter((ref) => ref.type === 'issue');
+  if (pr.length > 0 || issue.length > 0) {
+    return ' (' + [...pr, ...issue].map((ref) => formatReference(ref, config.repo)).join(', ') + ')';
+  }
+  if (references.length > 0) {
+    return ' (' + formatReference(references[0], config.repo) + ')';
+  }
+  return '';
+}

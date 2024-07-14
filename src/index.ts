@@ -2,19 +2,14 @@
 import { default as getChangesets } from '@changesets/read';
 import writeChangeset from '@changesets/write';
 import { getPackagesSync } from '@manypkg/get-packages';
-import { execSync } from 'child_process';
+import { loadChangelogConfig, parseCommits } from 'changelogen';
+import consola from 'consola';
 import fs from 'fs';
 import path from 'path';
-import {
-  associateCommitsToConventionalCommitMessages,
-  conventionalMessagesWithCommitsToChangesets,
-  difference,
-  getCommitsSinceRef,
-} from './utils/index.js';
+import { commitsToChangesets, difference, getCommitsSinceRef } from './utils/index.js';
 
 const CHANGESET_CONFIG_LOCATION = path.join('.changeset', 'config.json');
-
-const conventionalCommitChangeset = async (
+export default async (
   cwd: string = process.cwd(),
   options: { ignoredFiles: (string | RegExp)[] } = { ignoredFiles: [] },
 ) => {
@@ -23,19 +18,20 @@ const conventionalCommitChangeset = async (
   );
   const changesetConfig = JSON.parse(fs.readFileSync(path.join(cwd, CHANGESET_CONFIG_LOCATION)).toString());
   const { baseBranch = 'main' } = changesetConfig;
+  const changelogenConfig = await loadChangelogConfig(cwd);
 
-  const commitsSinceBase = getCommitsSinceRef(baseBranch);
+  consola.info(`Generating changelog for ${changelogenConfig.from || ''}...${changelogenConfig.to}`);
 
-  const commitsWithMessages = commitsSinceBase.map((commitHash) => ({
-    commitHash,
-    commitMessage: execSync(`git log -n 1 --pretty=format:%B ${commitHash}`).toString(),
-  }));
+  const rawCommits = await getCommitsSinceRef(baseBranch);
 
-  const changelogMessagesWithAssociatedCommits = associateCommitsToConventionalCommitMessages(commitsWithMessages);
+  const commits = parseCommits(rawCommits, changelogenConfig).filter(
+    (c) => changelogenConfig.types[c.type] && !(c.type === 'chore' && c.scope === 'deps' && !c.isBreaking),
+  );
 
-  const changesets = conventionalMessagesWithCommitsToChangesets(changelogMessagesWithAssociatedCommits, {
+  const changesets = commitsToChangesets(commits, {
     ignoredFiles: options.ignoredFiles,
     packages,
+    changelogen: changelogenConfig,
   });
 
   const currentChangesets = await getChangesets(cwd);
@@ -44,5 +40,3 @@ const conventionalCommitChangeset = async (
 
   newChangesets.forEach((changeset) => writeChangeset(changeset, cwd));
 };
-
-conventionalCommitChangeset();

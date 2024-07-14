@@ -1,4 +1,4 @@
-# changeset-conventional-commits
+# changeset-changelogen
 
 ## 0.2.5
 
@@ -19,7 +19,7 @@
   [
     {
       releases: [[Object], [Object]],
-      summary: "chore(root): add two test packages\n",
+      summary: 'chore(root): add two test packages\n',
       packagesChanged: [[Object], [Object]],
     },
   ];
@@ -32,7 +32,7 @@
   [
     {
       releases: [[Object], [Object]],
-      summary: "chore(root): add two test packages",
+      summary: 'chore(root): add two test packages',
       packagesChanged: [[Object], [Object]],
     },
   ];
@@ -43,10 +43,7 @@
   ```ts
   const compareChangeSet = (a: Changeset, b: Changeset): boolean => {
     // return a.summary === b.summary && JSON.stringify(a.releases) == JSON.stringify(b.releases);
-    return (
-      a.summary.replace(/\n$/, "") === b.summary &&
-      JSON.stringify(a.releases) == JSON.stringify(b.releases)
-    );
+    return a.summary.replace(/\n$/, '') === b.summary && JSON.stringify(a.releases) == JSON.stringify(b.releases);
   };
   ```
 

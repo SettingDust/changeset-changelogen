@@ -19,6 +19,7 @@ export const commitsToChangesets = (
   options: { ignoredFiles?: (string | RegExp)[]; packages: Package[]; changelogen: ResolvedChangelogConfig },
 ) => {
   const { ignoredFiles = [], packages } = options;
+  const root = getRepoRoot();
   return commits
     .map((commit) => {
       let semver = options.changelogen.types[commit.type].semver;
@@ -30,9 +31,9 @@ export const commitsToChangesets = (
         .filter((file) => {
           return ignoredFiles.every((ignoredPattern) => !file.match(ignoredPattern));
         })
-        .map((file) => path.normalize(file));
+        .map((file) => path.normalize(`${root}/${file}`));
       const packagesChanged = packages.filter((pkg) => {
-        return filesChanged.some((file) => file.startsWith(pkg.relativeDir));
+        return filesChanged.some((file) => file.startsWith(pkg.dir));
       });
       if (packagesChanged.length === 0) return null;
       return {
@@ -97,7 +98,7 @@ export const difference = (a: Changeset[], b: Changeset[]): Changeset[] => {
  */
 function formatCommit(commit: GitCommit, config: ResolvedChangelogConfig) {
   return (
-    '- ' +
+    `${config.types[commit.type].title}: ` +
     (commit.scope ? `**${commit.scope.trim()}:** ` : '') +
     (commit.isBreaking ? '⚠️  ' : '') +
     upperFirst(commit.description) +

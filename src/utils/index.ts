@@ -15,13 +15,16 @@ export const getRepoRoot = () => {
 };
 
 export const groupTheCommitsWithoutSemver = (commits: GitCommit[], config: ResolvedChangelogConfig) => {
-  return commits.reduce((commits, commit) => {
+  return commits.reduce((grouped, commit) => {
+    if (!grouped.length) grouped.push([]);
+    const lastGroup = grouped.at(-1)!;
     if (config.types[commit.type].semver || commit.isBreaking) {
-      commits.push([commit]);
+      if (lastGroup.some((it) => config.types[it.type].semver || it.isBreaking)) grouped.push([commit]);
+      else lastGroup.push(commit);
     } else {
-      commits[commits.length - 1].push(commit);
+      lastGroup.push(commit);
     }
-    return commits;
+    return grouped;
   }, [] as GitCommit[][]);
 };
 

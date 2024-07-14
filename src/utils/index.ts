@@ -101,7 +101,10 @@ export const getCommitsSinceRef = (branch: string) => {
 };
 
 const compareChangeSet = (a: Changeset, b: Changeset): boolean => {
-  return a.summary.replace(/\n$/, '') === b.summary && JSON.stringify(a.releases) == JSON.stringify(b.releases);
+  return (
+    a.summary.replace(/\s/g, '') === b.summary.replace(/\s/g, '') &&
+    JSON.stringify(a.releases) == JSON.stringify(b.releases)
+  );
 };
 
 export const difference = (a: Changeset[], b: Changeset[]): Changeset[] => {

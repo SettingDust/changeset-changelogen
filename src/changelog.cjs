@@ -4,7 +4,7 @@
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const getReleaseLine = async (changeset, _type) => {
-  const [firstLine, ...futureLines] = changeset.summary.split('\n').map((l) => l.trimEnd());
+  const [firstLine, ...futureLines] = changeset.summary.split('\n');
 
   let returnVal = `- ${firstLine}`;
 

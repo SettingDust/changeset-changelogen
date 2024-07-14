@@ -33,7 +33,9 @@ export default async (
   const rawCommits = await getGitDiff(changelogenConfig.from, changelogenConfig.to);
 
   const commits = parseCommits(rawCommits, changelogenConfig).filter(
-    (c) => changelogenConfig.types[c.type] && !(c.type === 'chore' && c.scope === 'deps' && !c.isBreaking),
+    (c) =>
+      changelogenConfig.types[c.type] &&
+      !(c.type === 'chore' && (c.scope === 'deps' || c.scope === 'changeset') && !c.isBreaking),
   );
 
   const changesets = commitsToChangesets(groupTheCommitsWithoutSemver(commits, changelogenConfig), {

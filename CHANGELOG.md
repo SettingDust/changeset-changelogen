@@ -1,5 +1,44 @@
 # changeset-changelogen
 
+## 0.3.0
+
+### Minor Changes
+
+- **🚀 Enhancements**: Use changelogen for changeset generation ([3f3880c](https://github.com/SettingDust/changeset-changelogen/commit/3f3880c))
+
+  **🏡 Chore**: Update dependencies & simply bin with tsx ([edacd63](https://github.com/SettingDust/changeset-changelogen/commit/edacd63))
+
+### Patch Changes
+
+- **🩹 Fixes**: Correct the logic for matching packages path & remove unused types ([d548e8a](https://github.com/SettingDust/changeset-changelogen/commit/d548e8a))
+- **🩹 Fixes(utils)**: Group the commits without semver correctly ([d3a70dd](https://github.com/SettingDust/changeset-changelogen/commit/d3a70dd))
+
+  **🤖 CI**: Update actions ([144a46f](https://github.com/SettingDust/changeset-changelogen/commit/144a46f))
+
+- **🩹 Fixes**: Add src folder to files ([4f984c6](https://github.com/SettingDust/changeset-changelogen/commit/4f984c6))
+- **💅 Refactors(utils)**: Group commits without semver ([f5a54b3](https://github.com/SettingDust/changeset-changelogen/commit/f5a54b3))
+  Group the commits without a semver bump together and modify the changelogen
+  utilization to improve changeset generation. This provides a more structured
+  approach to handling commits that do not trigger a semver change, ensuring
+  that they are appropriately aggregated in the changelog.
+- **📖 Documentation**: Update readme ([3e245f8](https://github.com/SettingDust/changeset-changelogen/commit/3e245f8))
+
+  **🤖 CI**: Use pnpm version from package.json ([e380053](https://github.com/SettingDust/changeset-changelogen/commit/e380053))
+
+  **🤖 CI**: Generate changeset ([9800c92](https://github.com/SettingDust/changeset-changelogen/commit/9800c92))
+
+- **🩹 Fixes**: Don't compare empty chars for changeset ([a3442b6](https://github.com/SettingDust/changeset-changelogen/commit/a3442b6))
+
+  **🏡 Chore**: Filter out chore type with changeset scope for commiting changesets ([9f09e09](https://github.com/SettingDust/changeset-changelogen/commit/9f09e09))
+
+  **🎨 Styles**: Remove commit prefix with custom changelog script ([9f1df8d](https://github.com/SettingDust/changeset-changelogen/commit/9f1df8d))
+
+  **🤖 CI**: Remove changeset generation from release ([76ce3bf](https://github.com/SettingDust/changeset-changelogen/commit/76ce3bf))
+
+- **🩹 Fixes**: Matching the changed files when in root ([00b4c04](https://github.com/SettingDust/changeset-changelogen/commit/00b4c04))
+
+  **🏡 Chore**: Uniform the git from ([ff2e306](https://github.com/SettingDust/changeset-changelogen/commit/ff2e306))
+
 ## 0.2.5
 
 ### Patch Changes

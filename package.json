@@ -8,10 +8,12 @@
   "keywords": [
     "changesets",
     "changeset",
-    "conventional commits"
+    "conventional commits",
+    "changelogen"
   ],
   "files": [
-    "/bin"
+    "/bin",
+    "/src"
   ],
   "bin": {
     "changeset-changelogen": "./bin/index.js"

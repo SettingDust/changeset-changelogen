@@ -1,7 +1,8 @@
 import type { Changeset } from '@changesets/types';
 import { Package } from '@manypkg/get-packages';
-import { formatReference, getGitDiff, GitCommit, Reference, ResolvedChangelogConfig } from 'changelogen';
+import { formatReference, GitCommit, Reference, ResolvedChangelogConfig } from 'changelogen';
 import { execSync } from 'child_process';
+import consola from 'consola';
 import path from 'path';
 import { upperFirst } from 'scule';
 
@@ -20,6 +21,8 @@ export const commitsToChangesets = (
   const { ignoredFiles = [], packages } = options;
   return commits
     .map((commit) => {
+      let semver = options.changelogen.types[commit.type].semver;
+      if (commit.isBreaking) semver = 'major';
       const filesChanged = getFilesChangedSince({
         from: commit.shortHash,
         to: commit.shortHash,
@@ -33,14 +36,14 @@ export const commitsToChangesets = (
       });
       if (packagesChanged.length === 0) return null;
       return {
-        releases: packagesChanged.map((pkg) => {
-          let semver = options.changelogen.types[commit.type].semver;
-          if (commit.isBreaking) semver = 'major';
-          return {
-            name: pkg.packageJson.name,
-            type: semver,
-          };
-        }),
+        releases: semver
+          ? packagesChanged.map((pkg) => {
+              return {
+                name: pkg.packageJson.name,
+                type: semver,
+              };
+            })
+          : [],
         summary: formatCommit(commit, options.changelogen),
         packagesChanged,
       };
@@ -69,7 +72,7 @@ export const getCommitsSinceRef = (branch: string) => {
     try {
       sinceRef = execSync('git describe --tags --abbrev=0').toString();
     } catch (e) {
-      console.log(
+      consola.log(
         "No git tags found, using repo's first commit for automated change detection. Note: this may take a while.",
       );
       sinceRef = execSync('git rev-list --max-parents=0 HEAD').toString();
@@ -78,7 +81,7 @@ export const getCommitsSinceRef = (branch: string) => {
 
   sinceRef = sinceRef.trim();
 
-  return getGitDiff(sinceRef);
+  return sinceRef;
 };
 
 const compareChangeSet = (a: Changeset, b: Changeset): boolean => {

@@ -2,7 +2,7 @@
 import { default as getChangesets } from '@changesets/read';
 import writeChangeset from '@changesets/write';
 import { getPackagesSync } from '@manypkg/get-packages';
-import { loadChangelogConfig, parseCommits } from 'changelogen';
+import { getGitDiff, loadChangelogConfig, parseCommits } from 'changelogen';
 import consola from 'consola';
 import fs from 'fs';
 import path from 'path';
@@ -20,9 +20,11 @@ export default async (
   const { baseBranch = 'main' } = changesetConfig;
   const changelogenConfig = await loadChangelogConfig(cwd);
 
+  changelogenConfig.from = getCommitsSinceRef(baseBranch);
+
   consola.info(`Generating changelog for ${changelogenConfig.from || ''}...${changelogenConfig.to}`);
 
-  const rawCommits = await getCommitsSinceRef(baseBranch);
+  const rawCommits = await getGitDiff(changelogenConfig.from, changelogenConfig.to);
 
   const commits = parseCommits(rawCommits, changelogenConfig).filter(
     (c) => changelogenConfig.types[c.type] && !(c.type === 'chore' && c.scope === 'deps' && !c.isBreaking),
